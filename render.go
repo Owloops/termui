@@ -1,6 +1,6 @@
 // Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
+// Use of this source code is governed by a MIT license that can be
+// found in the LICENSE file.
 
 package termui
 
@@ -8,7 +8,7 @@ import (
 	"image"
 	"sync"
 
-	tb "github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell/v2"
 )
 
 type Drawable interface {
@@ -26,13 +26,30 @@ func Render(items ...Drawable) {
 		item.Unlock()
 		for point, cell := range buf.CellMap {
 			if point.In(buf.Rectangle) {
-				tb.SetCell(
-					point.X, point.Y,
-					cell.Rune,
-					tb.Attribute(cell.Style.Fg+1)|tb.Attribute(cell.Style.Modifier), tb.Attribute(cell.Style.Bg+1),
-				)
+				screen.SetContent(point.X, point.Y, cell.Rune, nil, cellStyle(cell.Style))
 			}
 		}
 	}
-	tb.Flush()
+	screen.Show()
+}
+
+func cellColor(c Color) tcell.Color {
+	if c == ColorClear {
+		return tcell.ColorDefault
+	}
+	return tcell.ColorValid | tcell.Color(c)
+}
+
+func cellStyle(s Style) tcell.Style {
+	style := tcell.StyleDefault.Foreground(cellColor(s.Fg)).Background(cellColor(s.Bg))
+	if s.Modifier&ModifierBold != 0 {
+		style = style.Bold(true)
+	}
+	if s.Modifier&ModifierUnderline != 0 {
+		style = style.Underline(true)
+	}
+	if s.Modifier&ModifierReverse != 0 {
+		style = style.Reverse(true)
+	}
+	return style
 }

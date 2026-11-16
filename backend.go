@@ -1,35 +1,47 @@
 // Copyright 2017 Zack Guo <zack.y.guo@gmail.com>. All rights reserved.
-// Use of this source code is governed by a MIT license that can
-// be found in the LICENSE file.
+// Use of this source code is governed by a MIT license that can be
+// found in the LICENSE file.
 
 package termui
 
 import (
-	tb "github.com/nsf/termbox-go"
+	"github.com/gdamore/tcell/v2"
 )
 
-// Init initializes termbox-go and is required to render anything.
+var screen tcell.Screen
+
+// Init initializes the terminal and is required to render anything.
 // After initialization, the library must be finalized with `Close`.
 func Init() error {
-	if err := tb.Init(); err != nil {
+	s, err := tcell.NewScreen()
+	if err != nil {
 		return err
 	}
-	tb.SetInputMode(tb.InputEsc | tb.InputMouse)
-	tb.SetOutputMode(tb.Output256)
+	if err := s.Init(); err != nil {
+		return err
+	}
+	s.EnableMouse()
+	screen = s
 	return nil
 }
 
-// Close closes termbox-go.
+// Close closes the terminal.
 func Close() {
-	tb.Close()
+	if screen == nil {
+		return
+	}
+	screen.Fini()
+	screen = nil
 }
 
 func TerminalDimensions() (int, int) {
-	tb.Sync()
-	width, height := tb.Size()
-	return width, height
+	screen.Sync()
+	return screen.Size()
 }
 
 func Clear() {
-	tb.Clear(tb.ColorDefault, tb.Attribute(Theme.Default.Bg+1))
+	style := tcell.StyleDefault.Background(cellColor(Theme.Default.Bg))
+	screen.SetStyle(style)
+	screen.Clear()
+	screen.Show()
 }
